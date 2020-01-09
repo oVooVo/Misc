@@ -165,7 +165,9 @@ int pick_changed_pixels(const uint8_t* last_frame, uint8_t* frame, int num_pixel
 
 GifWriter::GifWriter(const QSize& size, int delay, QBuffer& buffer)
   : m_size(size), m_delay(delay), m_buffer(buffer)
+  , m_old_image(size.width(), size.height(), image_format)
 {
+  m_old_image.fill(0);
   puts("GIF89a");
 
   // screen descriptor
@@ -204,12 +206,12 @@ GifWriter::GifWriter(const QSize& size, int delay, QBuffer& buffer)
 
 void GifWriter::write_frame(QImage image)
 {
+  image = image.convertToFormat(image_format).scaled(m_size);
   const GifPalette palette(dither ? QImage() : m_old_image, image, dither);
-  image = image.convertToFormat(QImage::Format_RGBA8888_Premultiplied).scaled(m_size);
 //  m_old_image = dither ? dither_image(image.bits(), palette)
 //                       : threshold_image(image.bits(), palette);
 
-  m_old_image = threshold_image(image.bits(), palette);
+  m_old_image = dither_image(image.bits(), palette);
   write_lzw_image(palette);
 }
 
@@ -262,7 +264,7 @@ QImage GifWriter::dither_image(const uint8_t* image, const GifWriter::GifPalette
   // quantPixels initially holds color*256 for all pixels
   // The extra 8 bits of precision allow for sub-single-color error values
   // to be propagated
-  std::vector<int32_t> quant_pixels(num_pixels * 4);
+  std::vector<int32_t> quant_pixels(num_pixels * 4, 0);
 
   for (int ii = 0; ii < num_pixels * 4; ++ii) {
     uint8_t pix = image[ii];
@@ -324,11 +326,11 @@ QImage GifWriter::dither_image(const uint8_t* image, const GifWriter::GifPalette
     }
   }
 
-  QImage out_frame(m_size, QImage::Format_RGBA8888_Premultiplied);
+  QImage out_frame(m_size, image_format);
   uint8_t* out_frame_data = out_frame.bits();
   // Copy the palettized result to the output buffer
   for (int ii = 0; ii < num_pixels * 4; ++ii) {
-    out_frame_data[ii] = reinterpret_cast<uint8_t*>(quant_pixels.data())[ii];
+    out_frame_data[ii] = quant_pixels[ii];
   }
 
   return out_frame;
@@ -337,7 +339,7 @@ QImage GifWriter::dither_image(const uint8_t* image, const GifWriter::GifPalette
 QImage GifWriter::threshold_image(const uint8_t* image, const GifWriter::GifPalette& palette)
 {
   uint32_t num_pixels = m_size.width() * m_size.height();
-  QImage outImage(m_size.width(), m_size.height(), QImage::Format_RGBA8888_Premultiplied);
+  QImage outImage(m_size.width(), m_size.height(), image_format);
   uint8_t* out_frame = outImage.bits();
   uint8_t* last_frame = m_old_image.isNull() ? nullptr : m_old_image.bits();
 

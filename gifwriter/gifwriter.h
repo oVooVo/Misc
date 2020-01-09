@@ -2,6 +2,7 @@
 
 // Based on code by Charlie Tangora (ctangora@gmail.com) (Public domain)
 
+#include <QImage>
 #include <QSize>
 #include <QDataStream>
 #include <QImage>
@@ -18,12 +19,13 @@ public:
   static QByteArray encode(const std::vector<QImage>& frames, int delay, bool dither);
   bool dither = true;
 
-private:
+//private:
   static constexpr int k_gif_trans_index = 0;
   const QSize m_size;
   int m_delay = 200;
   QBuffer& m_buffer;
   QImage m_old_image;
+  static constexpr QImage::Format image_format = QImage::Format_RGBA8888_Premultiplied;
 
   void puts(const char* str);
   void puts(const char* str, std::size_t n);
@@ -62,6 +64,7 @@ private:
 
   private:
     const bool m_dither;
+
   };
 
   // The LZW dictionary is a 256-ary tree constructed as the file is encoded,
