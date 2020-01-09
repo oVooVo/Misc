@@ -1,5 +1,4 @@
 #include "gifwriter.h"
-#include "common.h"
 #include <QBuffer>
 #include <QImage>
 #include <QSize>
@@ -7,7 +6,7 @@
 namespace
 {
 
-using RGB = GifWriter::RGB;
+using RGB = MyLib::GifWriter::RGB;
 
 RGB operator+(const RGB& a, const RGB& b)
 {
@@ -163,6 +162,10 @@ int pick_changed_pixels(const uint8_t* last_frame, uint8_t* frame, int num_pixel
 
 }  // namespace
 
+
+namespace MyLib
+{
+
 GifWriter::GifWriter(const QSize& size, int delay, QBuffer& buffer)
   : m_size(size), m_delay(delay), m_buffer(buffer)
   , m_old_image(size.width(), size.height(), image_format)
@@ -208,10 +211,8 @@ void GifWriter::write_frame(QImage image)
 {
   image = image.convertToFormat(image_format).scaled(m_size);
   const GifPalette palette(dither ? QImage() : m_old_image, image, dither);
-//  m_old_image = dither ? dither_image(image.bits(), palette)
-//                       : threshold_image(image.bits(), palette);
-
-  m_old_image = dither_image(image.bits(), palette);
+  m_old_image = dither ? dither_image(image.bits(), palette)
+                       : threshold_image(image.bits(), palette);
   write_lzw_image(palette);
 }
 
@@ -712,3 +713,5 @@ GifWriter::GifBitStatus::GifBitStatus()
   : chunk(256, 0)
 {
 }
+
+}  // namespace MyLib

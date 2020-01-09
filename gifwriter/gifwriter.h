@@ -9,6 +9,9 @@
 
 class QBuffer;
 
+namespace MyLib
+{
+
 class GifWriter
 {
 public:
@@ -85,3 +88,4 @@ public:
                                  int& best_index, int& bestDiff, int treeRoot = 1);
 };
 
+}  // namespace MyLib
